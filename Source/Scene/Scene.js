@@ -3229,6 +3229,8 @@ define([
         var us = context.uniformState;
 
         var view = scene._defaultView;
+        // console.log('scene  default view', view);
+        // console.log({positionWC:view.camera.positionWC});
         scene._view = view;
 
         updateFrameState(scene);

@@ -63,12 +63,25 @@ define([
         }
         var frameData = new VRFrameData();
 
+        window.foobar = widget; // dev only
         function renderWebVR() {
             vrDisplay.getFrameData(frameData);
             widget.resize();
+            // widget.scene.camera._positionWC =
+            //     new Cartesian3(
+            //         ,
+            //         frameData.pose.position[1],
+            //         frameData.pose.position[2]
+            //     );
+            var factor = 100000;
+            widget.scene.camera.positionWC.x += frameData.pose.position[0]*factor;
+            widget.scene.camera.positionWC.y += frameData.pose.position[1] *factor;
+            widget.scene.camera.positionWC.z += frameData.pose.position[2] * factor;
+            // console.log('erm', widget.scene.camera.positionWC);
             widget.render();
-            console.log('FrameData', frameData);
-            console.log('Pose',frameData.pose);
+            window.foobar = widget; // dev only
+            // console.log('FrameData', frameData);
+            // console.log('Pose',frameData.pose);
             vrDisplay.submitFrame();
             window.vrSceneFrame = requestAnimationFrame(renderWebVR);
         }
