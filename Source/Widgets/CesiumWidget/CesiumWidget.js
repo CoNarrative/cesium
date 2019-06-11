@@ -52,6 +52,57 @@ define([
         return buildModuleUrl('Assets/Textures/SkyBox/tycho2t3_80_' + suffix + '.jpg');
     }
 
+    function startWebVRRenderLoop(widget) {
+        window.vrSceneFrame = undefined;
+        widget._renderLoopRunning = true;
+        var canvas = widget.canvas;
+        var vrDisplay = null;
+        if (!navigator.getVRDisplays) {
+            console.error('WebVR 1.1 not supported');
+            return;
+        }
+        var frameData = new VRFrameData();
+
+        function renderWebVR() {
+            vrDisplay.getFrameData(frameData);
+            widget.resize();
+            widget.render();
+            console.log('FrameData', frameData);
+            console.log('Pose',frameData.pose);
+            vrDisplay.submitFrame();
+            window.vrSceneFrame = requestAnimationFrame(renderWebVR);
+        }
+
+        // Then get the displays attached to the computer
+        navigator.getVRDisplays().then(function(displays) {
+            // If a display is available, use it to present the scene
+            if (displays.length === 0) {
+                console.error('No WebVR displays available');
+            }
+            vrDisplay = displays[0];
+            vrDisplay.requestPresent([{source : canvas}]).then(function() {
+                console.log('Presenting to WebVR display');
+
+                // Set the canvas size to the size of the vrDisplay viewport
+
+                var leftEye = vrDisplay.getEyeParameters('left');
+                var rightEye = vrDisplay.getEyeParameters('right');
+
+                canvas.width = Math.max(leftEye.renderWidth, rightEye.renderWidth) * 2;
+                canvas.height = Math.max(leftEye.renderHeight, rightEye.renderHeight);
+
+                window.vrSceneFrame = vrDisplay.requestAnimationFrame(renderWebVR);
+
+
+                //todo on click goggles to exit vr mode call this also
+                //     vrDisplay.exitPresent();
+                // Stop the VR presentation, and start the normal presentation
+                //    vrDisplay.cancelAnimationFrame(vrSceneFrame);
+                //    drawScene();
+            });
+        });
+    }
+    window.normalSceneFrame = null;
     function startRenderLoop(widget) {
         widget._renderLoopRunning = true;
 
@@ -67,7 +118,7 @@ define([
                     if (!defined(targetFrameRate)) {
                         widget.resize();
                         widget.render();
-                        requestAnimationFrame(render);
+                        window.normalSceneFrame = requestAnimationFrame(render);
                     } else {
                         var interval = 1000.0 / targetFrameRate;
                         var delta = frameTime - lastFrameTime;
@@ -77,7 +128,7 @@ define([
                             widget.render();
                             lastFrameTime = frameTime - (delta % interval);
                         }
-                        requestAnimationFrame(render);
+                        window.normalSceneFrame = requestAnimationFrame(render);
                     }
                 } catch (error) {
                     widget._useDefaultRenderLoop = false;
@@ -92,7 +143,7 @@ define([
             }
         }
 
-        requestAnimationFrame(render);
+        window.normalSceneFrame = requestAnimationFrame(render);
     }
 
     function configureCanvasSize(widget) {
@@ -341,6 +392,8 @@ define([
             this._useDefaultRenderLoop = undefined;
             this.useDefaultRenderLoop = defaultValue(options.useDefaultRenderLoop, true);
 
+            this._useWebVRRenderLoop = undefined;
+
             this._targetFrameRate = undefined;
             this.targetFrameRate = options.targetFrameRate;
 
@@ -535,6 +588,19 @@ define([
                     this._useDefaultRenderLoop = value;
                     if (value && !this._renderLoopRunning) {
                         startRenderLoop(this);
+                    }
+                }
+            }
+        },
+        useWebVRRenderLoop : {
+            get : function() {
+                return this._useWebVRRenderLoop;
+            },
+            set : function(value) {
+                if (this._useWebVRRenderLoop !== value) {
+                    this._useWebVRRenderLoop = value;
+                    if (value) {
+                        startWebVRRenderLoop(this);
                     }
                 }
             }

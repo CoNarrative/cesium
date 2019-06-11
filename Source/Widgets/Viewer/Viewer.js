@@ -646,7 +646,7 @@ Either specify options.terrainProvider instead or set options.baseLayerPicker to
         var vrButton;
         var vrSubscription;
         var vrModeSubscription;
-        if (options.vrButton) {
+        if (options.vrButton||true) {
             var vrContainer = document.createElement('div');
             vrContainer.className = 'cesium-viewer-vrContainer';
             viewerContainer.appendChild(vrContainer);
@@ -665,6 +665,22 @@ Either specify options.terrainProvider instead or set options.baseLayerPicker to
 
             vrModeSubscription = subscribeAndEvaluate(vrButton.viewModel, 'isVRMode', function(isVRMode) {
                 enableVRUI(that, isVRMode);
+                var widget = cesiumWidget;
+                if (!isVRMode && widget.useWebVRRenderLoop === undefined) {
+                    return;
+                }
+                if (!isVRMode) {
+                    console.log('Cancelling WebVR render loop');
+                    window.cancelAnimationFrame(window.vrSceneFrame);
+                    widget.useWebVRRenderLoop = false;
+                    widget._renderLoopRunning = false;
+                    widget.useDefaultRenderLoop = true;
+                    return;
+                }
+                console.log('Cancelling default render loop');
+                window.cancelAnimationFrame(window.normalSceneFrame);
+                widget.useDefaultRenderLoop = false;
+                widget.useWebVRRenderLoop = true;
             });
         }
 
