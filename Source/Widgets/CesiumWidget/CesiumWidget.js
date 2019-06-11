@@ -1,51 +1,51 @@
 define([
-        '../../Core/buildModuleUrl',
-        '../../Core/Cartesian3',
-        '../../Core/Clock',
-        '../../Core/defaultValue',
-        '../../Core/defined',
-        '../../Core/defineProperties',
-        '../../Core/destroyObject',
-        '../../Core/DeveloperError',
-        '../../Core/Ellipsoid',
-        '../../Core/FeatureDetection',
-        '../../Core/formatError',
-        '../../Core/requestAnimationFrame',
-        '../../Core/ScreenSpaceEventHandler',
-        '../../Scene/createWorldImagery',
-        '../../Scene/Globe',
-        '../../Scene/Moon',
-        '../../Scene/Scene',
-        '../../Scene/SceneMode',
-        '../../Scene/ShadowMode',
-        '../../Scene/SkyAtmosphere',
-        '../../Scene/SkyBox',
-        '../../Scene/Sun',
-        '../getElement'
-    ], function(
-        buildModuleUrl,
-        Cartesian3,
-        Clock,
-        defaultValue,
-        defined,
-        defineProperties,
-        destroyObject,
-        DeveloperError,
-        Ellipsoid,
-        FeatureDetection,
-        formatError,
-        requestAnimationFrame,
-        ScreenSpaceEventHandler,
-        createWorldImagery,
-        Globe,
-        Moon,
-        Scene,
-        SceneMode,
-        ShadowMode,
-        SkyAtmosphere,
-        SkyBox,
-        Sun,
-        getElement) {
+    '../../Core/buildModuleUrl',
+    '../../Core/Cartesian3',
+    '../../Core/Clock',
+    '../../Core/defaultValue',
+    '../../Core/defined',
+    '../../Core/defineProperties',
+    '../../Core/destroyObject',
+    '../../Core/DeveloperError',
+    '../../Core/Ellipsoid',
+    '../../Core/FeatureDetection',
+    '../../Core/formatError',
+    '../../Core/requestAnimationFrame',
+    '../../Core/ScreenSpaceEventHandler',
+    '../../Scene/createWorldImagery',
+    '../../Scene/Globe',
+    '../../Scene/Moon',
+    '../../Scene/Scene',
+    '../../Scene/SceneMode',
+    '../../Scene/ShadowMode',
+    '../../Scene/SkyAtmosphere',
+    '../../Scene/SkyBox',
+    '../../Scene/Sun',
+    '../getElement'
+], function(
+    buildModuleUrl,
+    Cartesian3,
+    Clock,
+    defaultValue,
+    defined,
+    defineProperties,
+    destroyObject,
+    DeveloperError,
+    Ellipsoid,
+    FeatureDetection,
+    formatError,
+    requestAnimationFrame,
+    ScreenSpaceEventHandler,
+    createWorldImagery,
+    Globe,
+    Moon,
+    Scene,
+    SceneMode,
+    ShadowMode,
+    SkyAtmosphere,
+    SkyBox,
+    Sun,
+    getElement) {
     'use strict';
 
     function getDefaultSkyBoxUrl(suffix) {
@@ -64,19 +64,25 @@ define([
         var frameData = new VRFrameData();
 
         window.foobar = widget; // dev only
+        var _lastFrameData = new Array(3);
+        _lastFrameData[0] = 0;
+        _lastFrameData[1] = 0;
+        _lastFrameData[2] = 0;
+
         function renderWebVR() {
             vrDisplay.getFrameData(frameData);
             widget.resize();
-            // widget.scene.camera._positionWC =
-            //     new Cartesian3(
-            //         ,
-            //         frameData.pose.position[1],
-            //         frameData.pose.position[2]
-            //     );
             var factor = 100000;
-            widget.scene.camera.positionWC.x += frameData.pose.position[0]*factor;
-            widget.scene.camera.positionWC.y += frameData.pose.position[1] *factor;
-            widget.scene.camera.positionWC.z += frameData.pose.position[2] * factor;
+            var pos = frameData.pose.position;
+            if (_lastFrameData[0] !== pos[0] || _lastFrameData[1] !== pos[1] || _lastFrameData[2] !== pos[2]) {
+                widget.scene.camera.position.x += (pos[0] - _lastFrameData[0]) * factor;
+                widget.scene.camera.position.y += (pos[1] - _lastFrameData[1]) * factor;
+                widget.scene.camera.position.z += (pos[2] - _lastFrameData[2]) * factor;
+                _lastFrameData[0] = pos[0];
+                _lastFrameData[1] = pos[1];
+                _lastFrameData[2] = pos[2];
+
+            }
             // console.log('erm', widget.scene.camera.positionWC);
             widget.render();
             window.foobar = widget; // dev only
@@ -106,7 +112,6 @@ define([
 
                 window.vrSceneFrame = vrDisplay.requestAnimationFrame(renderWebVR);
 
-
                 //todo on click goggles to exit vr mode call this also
                 //     vrDisplay.exitPresent();
                 // Stop the VR presentation, and start the normal presentation
@@ -115,11 +120,14 @@ define([
             });
         });
     }
+
     window.normalSceneFrame = null;
+
     function startRenderLoop(widget) {
         widget._renderLoopRunning = true;
 
         var lastFrameTime = 0;
+
         function render(frameTime) {
             if (widget.isDestroyed()) {
                 return;
@@ -321,7 +329,7 @@ define([
                 canvas : canvas,
                 contextOptions : options.contextOptions,
                 creditContainer : innerCreditContainer,
-                creditViewport: creditViewport,
+                creditViewport : creditViewport,
                 mapProjection : options.mapProjection,
                 orderIndependentTranslucency : options.orderIndependentTranslucency,
                 scene3DOnly : defaultValue(options.scene3DOnly, false),
@@ -460,7 +468,7 @@ define([
          *
          * @type {Element}
          */
-        creditContainer: {
+        creditContainer : {
             get : function() {
                 return this._creditContainer;
             }
@@ -472,8 +480,8 @@ define([
          *
          * @type {Element}
          */
-        creditViewport: {
-            get: function() {
+        creditViewport : {
+            get : function() {
                 return this._creditViewport;
             }
         },
@@ -674,9 +682,11 @@ define([
         var errorPanelScroller = document.createElement('div');
         errorPanelScroller.className = 'cesium-widget-errorPanel-scroll';
         content.appendChild(errorPanelScroller);
+
         function resizeCallback() {
             errorPanelScroller.style.maxHeight = Math.max(Math.round(element.clientHeight * 0.9 - 100), 30) + 'px';
         }
+
         resizeCallback();
         if (defined(window.addEventListener)) {
             window.addEventListener('resize', resizeCallback, false);
