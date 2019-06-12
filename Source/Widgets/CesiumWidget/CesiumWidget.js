@@ -87,24 +87,44 @@ define([
             0.0, 0.0, 1.0, 0.0,
             0.0, 0.0, 0.0, 1.0);
 
+        function updateViewMatrix(camera) {
+            Matrix4.computeView(camera._position, camera._direction, camera._up, camera._right, camera._viewMatrix);
+            Matrix4.multiply(camera._viewMatrix, camera._actualInvTransform, camera._viewMatrix);
+            Matrix4.inverseTransformation(camera._viewMatrix, camera._invViewMatrix);
+        }
+
+        var right=new Cartesian3();
+        var up=new Cartesian3();
+        var direction=new Cartesian3();
+        var position=new Cartesian3();
+
+        function updateCamera(camera, viewMatrix) {
+            right.x = viewMatrix[0];
+            right.y = viewMatrix[1];
+            right.z = viewMatrix[2];
+            up.x = viewMatrix[4];
+            up.y = viewMatrix[5];
+            up.z = viewMatrix[6];
+            direction.x = viewMatrix[8];
+            direction.y = viewMatrix[9];
+            direction.z = viewMatrix[10];
+            position.x = viewMatrix[12];
+            position.y = viewMatrix[13];
+            position.z = viewMatrix[14];
+            camera.right = right;
+            camera.up = up;
+            camera.direction = direction;
+            camera.position = position;
+        }
 
         function renderWebVR() {
             vrDisplay.getFrameData(frameData);
             widget.resize();
-            var pos = frameData.pose.position;
-            if (_lastFrameData[0] !== pos[0] || _lastFrameData[1] !== pos[1] || _lastFrameData[2] !== pos[2]) {
-                var lvm = Matrix4.fromArray(frameData.leftViewMatrix);
-                console.log('lvm', lvm);
-                Matrix4.multiply(roomToWorld, lvm, viewMatrix);
-                console.log('viewmatrix', viewMatrix, Matrix4.getTranslation(viewMatrix, new Cartesian3(0, 0, 0)));
-
-                widget.scene.camera.position.x = viewMatrix[12];
-                widget.scene.camera.position.y = viewMatrix[13];
-                widget.scene.camera.position.z = viewMatrix[14];
-                _lastFrameData[0] = pos[0];
-                _lastFrameData[1] = pos[1];
-                _lastFrameData[2] = pos[2];
-            }
+            var lvm = Matrix4.fromArray(frameData.leftViewMatrix);
+            console.log('lvm', lvm);
+            Matrix4.multiply(roomToWorld, lvm, viewMatrix);
+            console.log('viewmatrix', viewMatrix, Matrix4.getTranslation(viewMatrix, new Cartesian3(0, 0, 0)));
+            updateCamera(widget.scene.camera, viewMatrix);
             widget.render();
             window.foobar = widget; // dev only
             vrDisplay.submitFrame();
