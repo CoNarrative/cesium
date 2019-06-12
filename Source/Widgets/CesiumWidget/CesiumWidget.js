@@ -21,7 +21,8 @@ define([
     '../../Scene/SkyAtmosphere',
     '../../Scene/SkyBox',
     '../../Scene/Sun',
-    '../getElement'
+    '../getElement',
+    '../../Core/Matrix4'
 ], function(
     buildModuleUrl,
     Cartesian3,
@@ -45,7 +46,8 @@ define([
     SkyAtmosphere,
     SkyBox,
     Sun,
-    getElement) {
+    getElement,
+    Matrix4) {
     'use strict';
 
     function getDefaultSkyBoxUrl(suffix) {
@@ -68,20 +70,40 @@ define([
         _lastFrameData[0] = 0;
         _lastFrameData[1] = 0;
         _lastFrameData[2] = 0;
+        var roomToWorld = Matrix4.multiplyByTranslation(Matrix4.IDENTITY, new Cartesian3(1984538, -15428874, 10990890), new Matrix4(
+            1.0, 0.0, 0.0, 0.0,
+            0.0, 1.0, 0.0, 0.0,
+            0.0, 0.0, 1.0, 0.0,
+            0.0, 0.0, 0.0, 1.0
+        ));
+        var roomToWorld2 = Matrix4.multiplyByUniformScale(roomToWorld, 12000000, roomToWorld);
 
         function renderWebVR() {
             vrDisplay.getFrameData(frameData);
             widget.resize();
-            var factor = 100000;
+            // var factor = 100000;
+            // console.log('room 2 world', roomToWorld2);
             var pos = frameData.pose.position;
             if (_lastFrameData[0] !== pos[0] || _lastFrameData[1] !== pos[1] || _lastFrameData[2] !== pos[2]) {
-                widget.scene.camera.position.x += (pos[0] - _lastFrameData[0]) * factor;
-                widget.scene.camera.position.y += (pos[1] - _lastFrameData[1]) * factor;
-                widget.scene.camera.position.z += (pos[2] - _lastFrameData[2]) * factor;
-                _lastFrameData[0] = pos[0];
-                _lastFrameData[1] = pos[1];
-                _lastFrameData[2] = pos[2];
+                console.log('vm', frameData.leftViewMatrix);
+                var viewMatrix = new Matrix4(
+                    1.0, 0.0, 0.0, 0.0,
+                    0.0, 1.0, 0.0, 0.0,
+                    0.0, 0.0, 1.0, 0.0,
+                    0.0, 0.0, 0.0, 1.0);
+                Matrix4.multiply(Matrix4.fromArray(frameData.leftViewMatrix), roomToWorld2, viewMatrix);
+                console.log('viewmatrix', viewMatrix, Matrix4.getTranslation(viewMatrix, new Cartesian3(0, 0, 0)));
 
+                widget.scene.camera.position.x = viewMatrix[12];
+                widget.scene.camera.position.y = viewMatrix[13];
+                widget.scene.camera.position.z = viewMatrix[14];
+                //     widget.scene.camera.position.x += (pos[0] - _lastFrameData[0]) * factor;
+                //     widget.scene.camera.position.y += (pos[1] - _lastFrameData[1]) * factor;
+                //     widget.scene.camera.position.z += (pos[2] - _lastFrameData[2]) * factor;
+                    _lastFrameData[0] = pos[0];
+                    _lastFrameData[1] = pos[1];
+                    _lastFrameData[2] = pos[2];
+                //
             }
             // console.log('erm', widget.scene.camera.positionWC);
             widget.render();
